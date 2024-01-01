@@ -1,6 +1,6 @@
-# when the health goes down to very low, it will crash
-import pyautogui as pg, sys,time,random
+import sys,time
 import pytesseract
+import os
 import PySimpleGUI as sg
 import cv2
 from selenium import webdriver
@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from pokemonlist import pokemon_list
+import json
 #from plyer import notification
 def walk(mode,driver):
     if mode == 'a':
@@ -47,32 +48,39 @@ def walk(mode,driver):
         return 's'
 def kill(driver):
     while True:
-        temp = 0
-        driver.save_screenshot('my_image.png')
-        im = Image.open('my_image.png')
-        im = im.crop((1100,380,1200,401))
-        file = 'my_file.png'
-        im.save(file)
-        hp= pytesseract.image_to_string(file,config='--psm 13 --oem 3 -c tessedit_char_whitelist=0123456789%')[:-2]
-        print(hp)
-        try:
-            temp = int(hp)
-        except:
-            hp = ''
-        if hp == '':
+        name = checkEncounter(driver)
+        #print(name)
+        B1 = ''
+        if name[0] != None:
+            B1 = check_special(name)
+        if B1 == 'Normal' and name[0] not in pokemon_list and '-Christmas' not in name[0]:
             break
-        time.sleep(0.5)
-        actions = ActionChains(driver)
-        actions.send_keys('1')
-        actions.perform()
-        time.sleep(0.5)
-        actions.send_keys('2')
-        actions.perform()
+        elif B1 == '':
+            break
+        while True:
+            driver.save_screenshot('my_image.png')
+            im = Image.open('my_image.png')
+            im = im.crop((1000,800,1100,850))
+            file= 'my_file.png'
+            im.save(file)
+            img = cv2.imread("my_file.png")
+            gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gry, (3,3), 0)
+            thr = cv2.threshold(blur, thresh=0, maxval=255, type=cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)[1]
+            hp= pytesseract.image_to_string(thr,config="--psm 10")
+            #print(hp)
+            if hp == 'Fight:\n':
+                actions = ActionChains(driver)
+                actions.send_keys('1')
+                actions.perform()
+                time.sleep(0.5)
+                actions.send_keys('2')
+                actions.perform()
+            break
         time.sleep(1)
     
     
-def hunt_land(mode,pokemonList,driver):
-    DodgeList = ["Cryogonal"]
+def hunt_land(mode,pokemonList,driver,DodgeList):
     while True:
         mode = walk(mode,driver)
         name = checkEncounter(driver)
@@ -86,7 +94,7 @@ def hunt_land(mode,pokemonList,driver):
                 name = name[1][3:]
                 sg.Popup(f"pokemon Appeared, it's a Elite {name}")
                 break
-            elif name[0] in pokemonList:
+            elif name[0] in pokemonList or ('-Christmas' in name[0] and name[0][:-10] in pokemonList):
                 sg.Popup(f"pokemon Appeared, it's a {name[0]}")
                 break
             elif name[0] in DodgeList:
@@ -130,41 +138,94 @@ def setupInfo():
     driver = webdriver.Edge(service = service,options = edge_options)
     return driver
     
-def setupwebsite(driver):
+def setupwebsite(driver,username,password):
     url = "https://pokemon-planet.com"
     driver.get(url)
     button = driver.find_element(By.ID, "playnow2")
     button.click()
     button = driver.find_element(By.ID, "user")
-    button.send_keys("invincibletroll")
+    button.send_keys(username)
     button = driver.find_element(By.ID, "passwrd")
-    button.send_keys("chi020725")
+    button.send_keys(password)
     button = driver.find_element(By.XPATH, '//button[@type="submit"]')
     button.click()
     button = driver.find_element(By.ID, "playnowbutton")
     button.click()
+def check_for_word(file_path, target_word):
+    try:
+        with open(file_path, 'r') as file:
+            content = file.read()
+            return target_word in content
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return False
     
-def main():
+def main(username, password):
+    x = False
     driver = setupInfo()
-    setupwebsite(driver)
-    pokemonList=['Abra',
-                 'Sneasel', 'Snorunt', 'Snover', 'Spheal', 'Swinub' ,
-                 'Articuno']
-    print("press when start program")
-    y = input()
-    mode = 'a'
     driver.set_window_size(1722, 1034)
+    print(driver.get_window_size())
+    setupwebsite(driver,username,password)
+    pokemonList=[]
+    DodgeList = []
+    signal_file = "signal.txt"
+    while not os.path.exists(signal_file):
+        time.sleep(1)
+
+    # Remove the signal file
+    os.remove(signal_file)
+    mode = 'a'
+    signal_file = "pokemon_List.json"
+    while not os.path.exists(signal_file):
+        time.sleep(1)
+    with open(signal_file, 'r') as file:
+        pokemonList=json.load(file)
+    os.remove(signal_file)
+    signal_file = "dodgelist.json"
+    while not os.path.exists(signal_file):
+        time.sleep(1)
+    with open(signal_file, 'r') as file:
+        DodgeList=json.load(file)
+    os.remove(signal_file)
     actions = ActionChains(driver)
     actions.key_down('b')
     actions.key_up('b')
     actions.perform()
     while True:
-        hunt_land(mode,pokemonList,driver)
-        print("decision: c for continue")
-        x=input()
-        if x != 'c':
+        hunt_land(mode,pokemonList,driver,DodgeList)
+        with open("return.txt", "w") as signal_file:
+             signal_file.write("pressed")
+        signal_file = "signal.txt"
+        while not os.path.exists(signal_file):
+            time.sleep(1)
+        if check_for_word("stop.txt", "pressed"):
+            x = True
+        os.remove(signal_file)
+        if x == True:
             break
+        # signal_file = "pokemon_List.json"
+        # while not os.path.exists(signal_file):
+        #     time.sleep(1)
+        # with open(signal_file, 'r') as file:
+        #     pokemonList=json.load(file)
+        # os.remove(signal_file)
+        # signal_file = "dodgelist.json"
+        # while not os.path.exists(signal_file):
+        #     time.sleep(1)
+        # with open(signal_file, 'r') as file:
+        #     DodgeList=json.load(file)
+        # os.remove(signal_file)
+        
     
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 3:
+        print("Usage: python pokemon.py <username> <password>")
+        sys.exit(1)
+
+    # Get username and password from command-line arguments
+    username = sys.argv[1]
+    password = sys.argv[2]
+
+    # Call the main function with username and password
+    main(username, password)
