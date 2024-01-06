@@ -95,7 +95,7 @@ def hunt_land(mode,pokemonList,driver,DodgeList):
                 name = name[1][3:]
                 sg.Popup(f"pokemon Appeared, it's a shiny {name}")
                 break
-            elif Bl == 'Shiny' and name[2][3: ] in pokemonList:
+            elif Bl == 'Shiny' and name[2][4: ] in pokemonList:
                 name = name[2][3:]
                 sg.Popup(f"pokemon Appeared, it's a shiny {name}")
                 break
@@ -103,7 +103,7 @@ def hunt_land(mode,pokemonList,driver,DodgeList):
                 name = name[1][3:]
                 sg.Popup(f"pokemon Appeared, it's a Elite {name}")
                 break
-            elif Bl == 'Elite' and name[2][3: ] in pokemonList:
+            elif Bl == 'Elite' and name[2][4: ] in pokemonList:
                 name = name[2][3:]
                 sg.Popup(f"pokemon Appeared, it's a Elite {name}")
                 break
