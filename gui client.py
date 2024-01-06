@@ -50,6 +50,8 @@ def load_user_data():
 
 def start_program():
     global Continue,Stop
+    with open("stop.txt", "w") as signal_file:
+        signal_file.write("not")
     with open("signal.txt", "w") as signal_file:
         signal_file.write("pressed")
     Continue = ttk.Button(tab2, text="Continue", command=continue_program)
@@ -71,7 +73,6 @@ def start_program():
     while not os.path.exists(signal_file):
        time.sleep(1)
     os.remove(signal_file)
-    print("yes")
     program_thread = threading.Thread(target=run_program)
     program_thread.start()
 def run_program():
@@ -93,25 +94,25 @@ def add_pokemon():
     entry_var.set("")
 
 def continue_program():
-    # with open("signal.txt", "w") as signal_file:
-    #     signal_file.write("pressed")
-    # with open("pokemon_List.json", "w") as signal_file:
-    #     json.dump(pokemon_hunt_list, signal_file)
-    # with open("dodgelist.json", "w") as signal_file:
-    #     json.dump(DodgeList, signal_file)
-    # Continue.config(state="disabled")
-    # Stop.config(state="disabled")
-    # add_Pokemon1.config(state="disabled")
-    # add_Pokemon2.config(state="disabled")
-    # remove_Pokemon1.config(state="disabled")
-    # remove_Pokemon2.config(state="disabled")
-    # signal_file = "return.txt"
-    # while not os.path.exists(signal_file):
-    #     time.sleep(1)
-    # os.remove(signal_file)
-    # program_thread = threading.Thread(target=run_program)
-    # program_thread.start()
-    pass
+    with open("signal.txt", "w") as signal_file:
+        signal_file.write("pressed")
+    with open("pokemon_List.json", "w") as signal_file:
+        json.dump(pokemon_hunt_list, signal_file)
+    with open("dodgelist.json", "w") as signal_file:
+        json.dump(DodgeList, signal_file)
+    Continue.config(state="disabled")
+    Stop.config(state="disabled")
+    add_Pokemon1.config(state="disabled")
+    add_Pokemon2.config(state="disabled")
+    remove_Pokemon1.config(state="disabled")
+    remove_Pokemon2.config(state="disabled")
+    signal_file = "return.txt"
+    while not os.path.exists(signal_file):
+        time.sleep(1)
+    os.remove(signal_file)
+    program_thread = threading.Thread(target=run_program)
+    program_thread.start()
+    
 def add_pokemon2():
     pokemon_name = entry_var2.get()
     if pokemon_name in pokemon_list and pokemon_name not in DodgeList and pokemon_name not in pokemon_hunt_list:

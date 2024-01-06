@@ -51,10 +51,13 @@ def kill(driver):
         name = checkEncounter(driver)
         #print(name)
         B1 = ''
-        if name[0] != None:
+        if name[0] != None or name[2] != None:
             B1 = check_special(name)
-        if B1 == 'Normal' and name[0] not in pokemon_list and '-Christmas' not in name[0]:
+        if B1 == 'Normal' and name[0] not in pokemon_list and '-Christmas' not in name[0] and name[2] not in pokemon_list and '-Christmas' not in name[2]:
+            #print("oh no")
             break
+        #elif B1 == 'Normal' and name[2] not in pokemon_list and '-Christmas' not in name[2]:
+            #break
         elif B1 == '':
             break
         while True:
@@ -84,29 +87,49 @@ def hunt_land(mode,pokemonList,driver,DodgeList):
     while True:
         mode = walk(mode,driver)
         name = checkEncounter(driver)
-        if name[0] != None:
+        print(name)
+        print(name[2])
+        if name[0] != None or name[2] != None:
             Bl = check_special(name)
-            if Bl == 'Shiny':
+            if Bl == 'Shiny' and name[1][3: ] in pokemonList:
                 name = name[1][3:]
                 sg.Popup(f"pokemon Appeared, it's a shiny {name}")
                 break
-            elif Bl == 'Elite':
+            elif Bl == 'Shiny' and name[2][3: ] in pokemonList:
+                name = name[2][3:]
+                sg.Popup(f"pokemon Appeared, it's a shiny {name}")
+                break
+            elif Bl == 'Elite' and name[1][3: ] in pokemonList:
                 name = name[1][3:]
+                sg.Popup(f"pokemon Appeared, it's a Elite {name}")
+                break
+            elif Bl == 'Elite' and name[2][3: ] in pokemonList:
+                name = name[2][3:]
                 sg.Popup(f"pokemon Appeared, it's a Elite {name}")
                 break
             elif name[0] in pokemonList or ('-Christmas' in name[0] and name[0][:-10] in pokemonList):
                 sg.Popup(f"pokemon Appeared, it's a {name[0]}")
                 break
+            elif name[2] in pokemonList or ('-Christmas' in name[2] and name[2][:-10] in pokemonList):
+                sg.Popup(f"pokemon Appeared, it's a {name[2]}")
+                break
             elif name[0] in DodgeList:
+                actions = ActionChains(driver)
+                actions.send_keys('4')
+                actions.perform()
+            elif name[2] in DodgeList:
                 actions = ActionChains(driver)
                 actions.send_keys('4')
                 actions.perform()
             elif name[0] in pokemon_list or '-Christmas' in name[0]:
                 kill(driver)
+            elif name[2] in pokemon_list or '-Christmas' in name[2]:
+                #print("True")
+                kill(driver)
 def check_special(name):
-    if name[1].startswith('[S]') or name[1].startswith('{S]'):
+    if name[1].startswith('[S]') or name[1].startswith('{S]') or name[2].startswith('[S]'):
         return 'Shiny'
-    elif name[1].startswith('[E]') or name[1].startswith('{E]'):
+    elif name[1].startswith('[E]') or name[1].startswith('{E]')or name[2].startswith('[E]'):
         return 'Elite'
     else:
         return 'Normal'
@@ -126,10 +149,24 @@ def checkEncounter(driver):
     cv2.imwrite(new_image,thresh)
     extracted_text= pytesseract.image_to_string(thresh,config="--psm 10")
     extracted_text2= pytesseract.image_to_string(file,config="--psm 10")
-    if extracted_text == '':
-        return (None, None)
+    image = 'my_image.png'
+    im = Image.open('my_image.png')
+    im = im.crop((1489,277,1842,316))
+    file= 'my_file.png'
+    im.save(file)
+    img = cv2.imread("my_file.png")
+    gry = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gry, (3,3), 0)
+    thr = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    hp= pytesseract.image_to_string(thr,config="--psm 10")
+    #print(hp)
+    if extracted_text == '' and hp == '':
+        return (None, None, None)
     else:
-        return (extracted_text[:-1],extracted_text2[:-1])
+        if hp[-1] =='\n':
+            return (extracted_text[:-1],extracted_text2[:-1], hp[:-1])
+        else:
+            return (extracted_text[:-1],extracted_text2[:-1], hp)
 def setupInfo():
     edge_options = Options()
     edge_options.add_experimental_option("detach", True)
@@ -192,29 +229,43 @@ def main(username, password):
     actions.key_up('b')
     actions.perform()
     while True:
-        hunt_land(mode,pokemonList,driver,DodgeList)
+        hunt_land(mode, pokemonList, driver, DodgeList)
+
+        # Signal the completion of the hunting
         with open("return.txt", "w") as signal_file:
-             signal_file.write("pressed")
-        signal_file = "signal.txt"
-        while not os.path.exists(signal_file):
+            signal_file.write("pressed")
+
+        # Wait for the signal to continue
+        signal_file_path = "signal.txt"
+        while not os.path.exists(signal_file_path):
             time.sleep(1)
+        # Check for the stop signal
         if check_for_word("stop.txt", "pressed"):
             x = True
-        os.remove(signal_file)
-        if x == True:
+        # Remove the signal file
+        os.remove(signal_file_path)
+        # Exit the loop if stop signal received
+        if x:
+            print("break")
             break
-        # signal_file = "pokemon_List.json"
-        # while not os.path.exists(signal_file):
-        #     time.sleep(1)
-        # with open(signal_file, 'r') as file:
-        #     pokemonList=json.load(file)
-        # os.remove(signal_file)
-        # signal_file = "dodgelist.json"
-        # while not os.path.exists(signal_file):
-        #     time.sleep(1)
-        # with open(signal_file, 'r') as file:
-        #     DodgeList=json.load(file)
-        # os.remove(signal_file)
+
+        # Update pokemonList from file
+        pokemon_list_file_path = "pokemon_List.json"
+        while not os.path.exists(pokemon_list_file_path):
+            time.sleep(1)
+            print("Waiting for pokemon_List.json...")
+        with open(pokemon_list_file_path, 'r') as file:
+            pokemonList = json.load(file)
+        os.remove(pokemon_list_file_path)
+
+        # Update DodgeList from file
+        dodge_list_file_path = "dodgelist.json"
+        while not os.path.exists(dodge_list_file_path):
+            time.sleep(1)
+            print("Waiting for dodgelist.json...")
+        with open(dodge_list_file_path, 'r') as file:
+            DodgeList = json.load(file)
+        os.remove(dodge_list_file_path)
         
     
 
