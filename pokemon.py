@@ -127,9 +127,9 @@ def hunt_land(mode,pokemonList,driver,DodgeList):
                 #print("True")
                 kill(driver)
 def check_special(name):
-    if name[1].startswith('[S]') or name[1].startswith('{S]') or name[2].startswith('[S]'):
+    if name[1].startswith('[S]') or name[1].startswith('{S]') or name[2].startswith('[S]') or name[2].startswith('{S]'):
         return 'Shiny'
-    elif name[1].startswith('[E]') or name[1].startswith('{E]')or name[2].startswith('[E]'):
+    elif name[1].startswith('[E]') or name[1].startswith('{E]') or name[2].startswith('[E]') or name[2].startswith('{E]'):
         return 'Elite'
     else:
         return 'Normal'
