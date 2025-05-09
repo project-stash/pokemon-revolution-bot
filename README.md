@@ -1,2 +1,2 @@
 You need ProClient with 1024 x 768 resolution size. To use the program, simply run guiclient.py and select what pokemon you want and add it in pokemonHuntList. If a pokemon name is recognized in encounter, it should shows up beside PokemonFound. The program simulates keyboard movement and it should blend in with real players.
-If you it doesnt work, you can simply encounter a pokemon and run realbot.py to to see if it needs adjustment. If you don't understand, simply ask.
+If you it doesnt work, you can simply encounter a pokemon and run realbot.py to to see if it needs adjustment. If you don't understand, simply open up an issue.
